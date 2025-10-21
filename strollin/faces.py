@@ -1,10 +1,41 @@
+"""Face utilities for loading known faces and recognizing people in frames.
+
+This module intentionally defers heavy imports (dlib/face_recognition/opencv) until
+functions are called so lightweight tests can import the module without native deps.
+
+Functions
+- load_known_faces(known_dir="known_faces") -> (encodings, names)
+- recognize_faces(frame, known_encodings, known_names, tolerance=0.5) -> [names]
+
+Usage example:
+    encs, names = load_known_faces('known_faces')
+    recognized = recognize_faces(frame, encs, names)
+"""
+
 import os
 
 
 def load_known_faces(known_dir='known_faces'):
-    """Load known face encodings from subfolders in `known_dir`.
-    Each subfolder name is treated as the person's label.
-    Returns (encodings_list, names_list)
+    """Load and return face encodings and labels from a folder structure.
+
+    The expected layout is:
+
+        known_faces/
+            Alice/
+                img1.jpg
+            Bob/
+                img1.jpg
+
+    Args:
+        known_dir (str): Path to the folder containing subfolders for each person.
+
+    Returns:
+        tuple: (encodings, names)
+            encodings (list): List of 128-d face encodings (one per image that had a face).
+            names (list): Parallel list of names (folder names) for each encoding.
+
+    Raises:
+        RuntimeError: If `face_recognition` is not installed.
     """
     try:
         import face_recognition
@@ -35,7 +66,20 @@ def load_known_faces(known_dir='known_faces'):
 
 
 def recognize_faces(frame, known_encodings, known_names, tolerance=0.5):
-    """Given a BGR frame (cv2), return list of recognized names found in the frame."""
+    """Recognize known faces in a single BGR frame.
+
+    Args:
+        frame (numpy.ndarray): BGR image as returned by OpenCV `VideoCapture.read()`.
+        known_encodings (list): List of known face encodings.
+        known_names (list): List of names matching `known_encodings`.
+        tolerance (float): Distance threshold for `face_recognition.compare_faces`.
+
+    Returns:
+        list: Names of recognized people found in the frame. May be empty.
+
+    Raises:
+        RuntimeError: If `cv2` or `face_recognition` are not installed.
+    """
     if not known_encodings:
         return []
     try:
